@@ -1,7 +1,5 @@
-from math import exp
-
-
-
+from math import floor, exp, ceil
+import numpy as np
 def V(r, w, m):
     """
     :param r: list of position vectors of all particles
@@ -9,12 +7,7 @@ def V(r, w, m):
     :param m:  mass of particles(all have equal one)
     :return: potential energy
     """
-    E = 0.0
-    for q in r:
-        for x_i in range(0, len(q)):
-            E += q[x_i]**2
-    E *= 0.5 * m * (w**2)
-    return E
+    return 0.5 * m * (w ** 2)*np.sum(np.square(r))
 
 
 def exp_fact(k, T, r, m, w):
@@ -27,6 +20,7 @@ def exp_fact(k, T, r, m, w):
     :return: exponential factor
     """
     beta = 1.0/(k*T)
-    val = exp(-beta*V(r, m, w))
+    U = V(r, w, m)
+    val = exp(-beta*U)
     return val
 

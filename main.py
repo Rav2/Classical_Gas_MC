@@ -10,13 +10,13 @@ def generate_system(N, x_av, y_av, z_av, sigma):
     :param y_av: for gauss distribution
     :param z_av: for gauss distribution
     :param sigma: for gauss distribution
-    :return: list of lists of particle coordinates:  r=[[x1, y1, z1],...,[xN, yN, zN]]
+    :return: numpy array of numpy arrays of particle coordinates:  r=[[x1, y1, z1],...,[xN, yN, zN]]
     """
     seed()
-    r = []
+    r = np.zeros((N,3))
     for particle in range(0,N):
-        xyz = [gauss(x_av, sigma), gauss(y_av, sigma), gauss(z_av, sigma)]
-        r.append(xyz)
+        xyz = np.array([gauss(x_av, sigma), gauss(y_av, sigma), gauss(z_av, sigma)])
+        r[particle] = xyz
     return r
 
 
@@ -36,55 +36,59 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
     seed()
     sigma = sigma0
     accepted = 0
-    energy = []
-    iter = []
-    for no in range(0, steps):
-        k = randint(0, N-1)  #particle number
-        part = r[k]
-        r_cp = r[:]
-        new_part = []
-        for ii in range(0, 3):
-            #TODO: dodac ograniczenia pudelka
-            new_part.append(gauss(part[ii], sigma))
-        r_cp[k]=new_part
-
+    e_factors = np.zeros((1, steps), dtype=np.float64)  # e_factors are all computed values of energy
+    step_no = [x for x in range(0, steps)]  # regular list not numpy!
+    for ii in range(0, steps):
+        no = randint(0, N-1)  # particle number
+        part = r[no]
+        r_cp = np.array(r)
+        new_part = np.zeros((1, 3))
+        for jj in range(0, 3):
+            new_part[0][jj]=(gauss(part[jj], sigma))
+        r_cp[no] = new_part
         P_old = exp_fact(k_b, T, r, m, w)
-        energy.append(exp_fact(k_b, T, r, m, w))
-        iter.append(no)
         P_new = exp_fact(k_b, T, r_cp, m, w)
         P = P_new/P_old
-        print(P)
-        #print(P)
+        # print(P)
         if random() < P:
-            r[k] = new_part
+            r = r_cp
             accepted += 1
-        if no > 10 and float(accepted)/float(no) < 0.5:
-            sigma -= 1.0/float(no)
-        elif no > 10 and float(accepted)/float(no) > 0.5:
-            sigma += 1.0/float(no)
+        e_factors[0][ii] = V(r, m, w)
+        # changing the value of sigma dynamically
+        if(ii < 1000):
+            kk=ii
+        else:
+            kk=1000
+        if ii > 10 and accepted/ii < 0.5:
+            sigma -= 1.0/kk
+        elif ii > 10 and accepted/ii > 0.5:
+            sigma += 1.0/kk
         if sigma < 0:
-            sigma=0.1
-    plt.plot(iter, energy)
+            sigma = 0.1
+        #printing progress
+        if ((ii+1)/steps*100) % 10 == 0:
+            print(((ii+1)/steps*100), '%')
+    cutoff = 0.05  # how much beginning values we have to cut off
+    energy = e_factors[0][int(cutoff*steps):]  # we take only energies in equilibrium state
+    plt.plot(step_no, e_factors[0])  # plotting E(steps)
+    plt.ylabel("potential energy")
+    plt.xlabel("MC steps")
     plt.show()
-    print('acceptance: ',float(accepted) / float(steps))
-    E = V(r, w, m)
-    #print('roznica', E_old/E)
-    print('error ', (1 - E/(1.5*N*k_b*T)) * 100, "%")
-
-
-
-
+    print('last sigma: ', sigma)
+    print('acceptance: ',float(accepted) / float(steps))  # should be close to 0.5
+    E = sum(energy)/(int(cutoff*steps))  # mean value of energy as estimator
+    #print('error: ', (1 - E/(1.5*N*k_b*T)) * 100, "%")  # relative error, only for us
 
 
 def main():
-    N = 100
+    N = 10000
     m = 1
     k = 1
-    T = 100
-    w = 2
-    sigma0 = 0.1
-    steps = 10000
-    r = generate_system(N, 10, 10, 10, 1)
+    T = 100 # increase when something is not working as it should
+    w = 1.5
+    sigma0 = 1
+    steps = 100000  # min 20
+    r = generate_system(N, 0, 0, 0, 1)
     dynamics(r, steps, sigma0, k, T, m, w)
 
 
