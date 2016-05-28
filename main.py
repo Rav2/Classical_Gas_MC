@@ -38,6 +38,8 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
     accepted = 0
     e_factors = np.zeros((1, steps), dtype=np.float64)  # e_factors are all computed values of energy
     step_no = [x for x in range(0, steps)]  # regular list not numpy!
+    condition = True
+    cutoff = 0
     for ii in range(0, steps):
         no = randint(0, N-1)  # particle number
         part = r[no]
@@ -54,7 +56,16 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
             r = r_cp
             accepted += 1
         e_factors[0][ii] = V(r, m, w)
-        # changing the value of sigma dynamically
+
+        #changing cutoff
+        if ii >= 40 and ii % 10 == 0 and condition:
+            if (np.sum(e_factors[0][ii - 20:ii]) - np.sum(e_factors[0][ii - 40:ii - 20])) < 100:
+                #print(np.sum(e_factors[0][ii - 20:ii]) - np.sum(e_factors[0][ii - 40:ii - 20]))
+                cutoff = (ii) / steps  # how much beginning values we have to cut off
+                print('cutoff: ', cutoff)
+                condition = False
+
+        #changing the value of sigma dynamically
         if(ii < 1000):
             kk=ii
         else:
@@ -66,18 +77,24 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
         if sigma < 0:
             sigma = 0.1
         #printing progress
-        if ((ii+1)/steps*100) % 10 == 0:
-            print(((ii+1)/steps*100), '%')
-    cutoff = 0.05  # how much beginning values we have to cut off
+        if ((ii+1)/steps*100) % 100 == 0:
+            print(((ii+1)/steps*10), '%')
     energy = e_factors[0][int(cutoff*steps):]  # we take only energies in equilibrium state
+
+    e_error = energy_error(energy, int((1 - cutoff) * steps))
+    print('Energy error: ', e_error)
+    print('last sigma: ', sigma)
+    print('acceptance: ',float(accepted) / float(steps))  # should be close to 0.5
+    print('Energy with expanded uncertainty(K=2): ',np.mean(energy),'+/-', 2*e_error)
+
     plt.plot(step_no, e_factors[0])  # plotting E(steps)
     plt.ylabel("potential energy")
     plt.xlabel("MC steps")
     plt.show()
-    print('last sigma: ', sigma)
-    print('acceptance: ',float(accepted) / float(steps))  # should be close to 0.5
-    E = sum(energy)/(int(cutoff*steps))  # mean value of energy as estimator
+
+    #E = sum(energy)/(int(cutoff*steps))  # mean value of energy as estimator
     #print('error: ', (1 - E/(1.5*N*k_b*T)) * 100, "%")  # relative error, only for us
+
 
 
 def main():
@@ -87,7 +104,7 @@ def main():
     T = 100 # increase when something is not working as it should
     w = 1.5
     sigma0 = 1
-    steps = 100000  # min 20
+    steps = 10000  # min 20
     r = generate_system(N, 0, 0, 0, 1)
     dynamics(r, steps, sigma0, k, T, m, w)
 
