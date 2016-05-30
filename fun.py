@@ -1,4 +1,4 @@
-from math import floor, exp, ceil
+from math import exp
 import numpy as np
 def V(r, w, m):
     """
@@ -34,17 +34,16 @@ def energy_error(energies, left_steps):
 
     estimator_E = np.mean(energies)
     R_0 = (np.std(energies))**2
-    R_k = np.array([])
-    for k in range(1, left_steps):
+    k_range = np.arange(1, left_steps)
+    R_k = np.zeros_like(k_range, dtype=float)
+    for k in k_range:
         if k % int(0.1 * left_steps)==0:
             print(k / left_steps * 100 + 10, '%')
-        rk = 0
-
-        for i in range(1, left_steps-k):
-            rk += (energies[i] - estimator_E) * (energies[i+k] - estimator_E)
-        #rk = sum()
-        if rk > 0.1:
-            R_k = np.append(R_k,rk)
+        #usunac +1
+        R_k[k-1] = np.sum((energies[0:left_steps - k] - estimator_E) * (energies[k:left_steps+1] - estimator_E))
+        #R_k[k-1] = np.sum((energies[k_range < left_steps - k] - estimator_E) * (energies[k_range > k] - estimator_E))
+    R_k = R_k[R_k > 0.1]
 
     delta_E = np.sqrt(R_0 * (1 + 2 * sum(R_k)) / left_steps)
     return delta_E
+

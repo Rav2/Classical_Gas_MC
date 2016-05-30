@@ -57,14 +57,17 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
             accepted += 1
         e_factors[0][ii] = V(r, m, w)
 
+        '''
         #changing cutoff
-        if ii >= 40 and ii % 10 == 0 and condition:
+        cutoff=0.0
+        if ii >= 100 and ii % 10 == 0 and condition:
+            p = np.polyfit(step_no[ii - 100:ii], e_factors[0][ii - 100:ii], 1)
+            print(step_no[ii], ' ', p[0])
             if (np.sum(e_factors[0][ii - 20:ii]) - np.sum(e_factors[0][ii - 40:ii - 20])) < 100:
-                #print(np.sum(e_factors[0][ii - 20:ii]) - np.sum(e_factors[0][ii - 40:ii - 20]))
                 cutoff = (ii) / steps  # how much beginning values we have to cut off
                 print('cutoff: ', cutoff)
-                condition = False
-
+                condition = False'''
+        cutoff = 0.1
         #changing the value of sigma dynamically
         if(ii < 1000):
             kk=ii
@@ -86,6 +89,7 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
     print('last sigma: ', sigma)
     print('acceptance: ',float(accepted) / float(steps))  # should be close to 0.5
     print('Energy with expanded uncertainty(K=2): ',np.mean(energy),'+/-', 2*e_error)
+    print('Theoretical value: ', 3/2 * N * k_b * T)
 
     plt.plot(step_no, e_factors[0])  # plotting E(steps)
     plt.ylabel("potential energy")
@@ -98,13 +102,13 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
 
 
 def main():
-    N = 10000
+    N = 200
     m = 1
     k = 1
-    T = 100 # increase when something is not working as it should
+    T = 10 # increase when something is not working as it should
     w = 1.5
     sigma0 = 1
-    steps = 10000  # min 20
+    steps = 100000  # min 20
     r = generate_system(N, 0, 0, 0, 1)
     dynamics(r, steps, sigma0, k, T, m, w)
 
