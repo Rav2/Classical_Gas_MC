@@ -40,6 +40,7 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
     step_no = [x for x in range(0, steps)]  # regular list not numpy!
     condition = True
     cutoff = 0
+    print("calculating <E>")
     for ii in range(0, steps):
         no = randint(0, N-1)  # particle number
         part = r[no]
@@ -69,10 +70,10 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
                 condition = False'''
         cutoff = 0.1
         #changing the value of sigma dynamically
-        if(ii < 1000):
-            kk=ii
-        else:
-            kk=1000
+        # if(ii < 1000):
+        kk=ii
+        # else:
+        #     kk=1000
         if ii > 10 and accepted/ii < 0.5:
             sigma -= 1.0/kk
         elif ii > 10 and accepted/ii > 0.5:
@@ -80,15 +81,17 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
         if sigma < 0:
             sigma = 0.1
         #printing progress
-        if ((ii+1)/steps*100) % 100 == 0:
-            print(((ii+1)/steps*10), '%')
-    energy = e_factors[0][int(cutoff*steps):]  # we take only energies in equilibrium state
+        if ((ii+1)/steps*1000) % 10 == 0:
+            print(((ii+1)/steps*100), '%')
 
-    e_error = energy_error(energy, int((1 - cutoff) * steps))
+    energy = e_factors[0][int(cutoff*steps):]  # we take only energies in equilibrium state
+    print("calculating u(<E>)")
+    estimator = np.mean(energy)
+    e_error = energy_error(energy, estimator, int((1 - cutoff) * steps))
     print('Energy error: ', e_error)
     print('last sigma: ', sigma)
     print('acceptance: ',float(accepted) / float(steps))  # should be close to 0.5
-    print('Energy with expanded uncertainty(K=2): ',np.mean(energy),'+/-', 2*e_error)
+    print('Energy with expanded uncertainty(K=2): ', estimator,'+/-', 2*e_error)
     print('Theoretical value: ', 3/2 * N * k_b * T)
 
     plt.plot(step_no, e_factors[0])  # plotting E(steps)
@@ -102,11 +105,11 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
 
 
 def main():
-    N = 200
+    N = 100
     m = 1
     k = 1
-    T = 10 # increase when something is not working as it should
-    w = 1.5
+    T = 10
+    w = 2
     sigma0 = 1
     steps = 100000  # min 20
     r = generate_system(N, 0, 0, 0, 1)
