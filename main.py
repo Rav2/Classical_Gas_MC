@@ -1,3 +1,5 @@
+#!/usr/bin/python
+
 from random import *
 from fun import *
 from matplotlib import pyplot as plt
@@ -20,7 +22,7 @@ def generate_system(N, x_av, y_av, z_av, sigma):
     return r
 
 
-def dynamics(r, steps, sigma0, k_b, T, m, w):
+def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
     """
 
     :param r: vector of all particles positions
@@ -38,25 +40,33 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
     accepted = 0
     e_factors = np.zeros((1, steps), dtype=np.float64)  # e_factors are all computed values of energy
     step_no = [x for x in range(0, steps)]  # regular list not numpy!
-    condition = True
     cutoff = 0
     print("calculating <E>")
     for ii in range(0, steps):
-        no = randint(0, N-1)  # particle number
-        part = r[no]
-        r_cp = np.array(r)
-        new_part = np.zeros((1, 3))
-        for jj in range(0, 3):
-            new_part[0][jj]=(gauss(part[jj], sigma))
-        r_cp[no] = new_part
-        P_old = exp_fact(k_b, T, r, m, w)
-        P_new = exp_fact(k_b, T, r_cp, m, w)
-        P = P_new/P_old
-        # print(P)
-        if random() < P:
-            r = r_cp
-            accepted += 1
-        e_factors[0][ii] = V(r, m, w)
+        accdata = []
+        for iii in range(sweep): # add energy only after sweep steps
+            no = randint(0, N-1)  # particle number
+            part = r[no]
+            r_cp = np.array(r)
+            new_part = np.zeros((1, 3))
+            for jj in range(0, 3):
+                new_part[0][jj] = (gauss(part[jj], sigma))
+            r_cp[no] = new_part
+            P = exp_fact2(k_b, T, r, r_cp, m, w)
+            if random() < P:
+                r = r_cp
+                accepted += 1
+                accdata.append(1)
+            else:
+                accdata.append(0)
+                
+        e_factors[0][ii] = V(r, w, m)
+        
+        # GW - better method for updating sigma
+        accrate=1.0*sum(accdata)/len(accdata)
+        sigma = sigma + 0.01*(accrate-0.5)
+        if sigma<=0.0: sigma=1.0e-9 # cannot be negative
+        #print ii, accrate, sigma
 
         '''
         #changing cutoff
@@ -69,19 +79,8 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
                 print('cutoff: ', cutoff)
                 condition = False'''
         cutoff = 0.1
-        #changing the value of sigma dynamically
-        # if(ii < 1000):
-        kk=ii
-        # else:
-        #     kk=1000
-        if ii > 10 and accepted/ii < 0.5:
-            sigma -= 1.0/kk
-        elif ii > 10 and accepted/ii > 0.5:
-            sigma += 1.0/kk
-        if sigma < 0:
-            sigma = 0.1
-        #printing progress
-        if ((ii+1)/steps*1000) % 10 == 0:
+
+        if ((ii+1)/steps*100) % 10 == 0:
             print(((ii+1)/steps*100), '%')
 
     energy = e_factors[0][int(cutoff*steps):]  # we take only energies in equilibrium state
@@ -90,30 +89,27 @@ def dynamics(r, steps, sigma0, k_b, T, m, w):
     e_error = energy_error(energy, estimator, int((1 - cutoff) * steps))
     print('Energy error: ', e_error)
     print('last sigma: ', sigma)
-    print('acceptance: ',float(accepted) / float(steps))  # should be close to 0.5
+    print('acceptance: ',float(accepted) / float(steps*sweep))  # should be close to 0.5
     print('Energy with expanded uncertainty(K=2): ', estimator,'+/-', 2*e_error)
-    print('Theoretical value: ', 3/2 * N * k_b * T)
+    print('Theoretical value: ', 3./2. * N * k_b * T)
 
     plt.plot(step_no, e_factors[0])  # plotting E(steps)
     plt.ylabel("potential energy")
     plt.xlabel("MC steps")
     plt.show()
 
-    #E = sum(energy)/(int(cutoff*steps))  # mean value of energy as estimator
-    #print('error: ', (1 - E/(1.5*N*k_b*T)) * 100, "%")  # relative error, only for us
-
-
 
 def main():
     N = 100
-    m = 1
-    k = 1
-    T = 10
-    w = 2
-    sigma0 = 1
-    steps = 100000  # min 20
-    r = generate_system(N, 0, 0, 0, 1)
-    dynamics(r, steps, sigma0, k, T, m, w)
+    m = 1.
+    k = 1.
+    T = 10.
+    w = 0.5
+    sigma0 = 1.5
+    steps = 10000  # min 20
+    sweep = 300
+    r = generate_system(N, 0., 0., 0., 1.)
+    dynamics(r, steps, sweep, sigma0, k, T, m, w)
 
 
 main()
