@@ -52,6 +52,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
             for jj in range(0, 3):
                 new_part[0][jj] = (gauss(part[jj], sigma))
             r_cp[no] = new_part
+            # P = exp_fact2_len(10**(-6), 0.01, r, r_cp, 1, 10)
             P = exp_fact2(k_b, T, r, r_cp, m, w)
             if random() < P:
                 r = r_cp
@@ -59,7 +60,8 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
                 accdata.append(1)
             else:
                 accdata.append(0)
-                
+
+        # e_factors[0][ii] = V_len(r, 1, 1)
         e_factors[0][ii] = V(r, w, m)
         
         # GW - better method for updating sigma
@@ -106,7 +108,7 @@ def main():
     T = 10.
     w = 2.5
     sigma0 = 1.5
-    steps = 10000  # min 20
+    steps = 1000  # min 20
     sweep = 300
     r = generate_system(N, 0., 0., 0., 1.)
     dynamics(r, steps, sweep, sigma0, k, T, m, w)

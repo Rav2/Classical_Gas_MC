@@ -9,18 +9,24 @@ def V(r, w, m):
     """
     return 0.5 * m * w * w * np.sum(np.square(r))
 
+def V_len(r, eps, sigma):
+    """
 
-def exp_fact(k, T, r, m, w):
+    :param r:
+    :param eps:
+    :param sigma:
+    :return:
     """
-    :param k: Boltzmann's const
-    :param T: temperature
-    :param r: list of position vectors of all particles
-    :param w: omega of oscillator
-    :param m:  mass of particles(all have equal one)
-    :return: exponential factor
-    """
+    sum = 0.0
+    for part in r:
+        sum += sigma**12/((part[0]**2+part[1]**2+part[2]*2)**6) - sigma**6//((part[0]**2+part[1]**2+part[2]*2)**3)
+    return 4*eps*sum
+
+def exp_fact2_len(eps, sigma, rold, rnew, k, T):
+
     beta = 1.0/(k*T)
-    U = V(r, w, m)
+    U = V_len(rnew, eps, sigma)-V_len(rold, eps, sigma)
+    # print(U)
     val = exp(-beta*U)
     return val
 
