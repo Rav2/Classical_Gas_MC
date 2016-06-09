@@ -52,7 +52,7 @@ def energy_error(energies, estimator_E, left_steps):
     for k in k_range:
         if (k/left_steps*100)%10 == 0:
             print(k/left_steps*100, '%')
-        R_k[k-1] = np.sum((energies[0:left_steps - k]) * (energies[k:left_steps+1]))/((left_steps+1)) / R_0
+        R_k[k-1] = np.sum((energies[0:left_steps - k]) * (energies[k:left_steps+1]))/((left_steps)) / R_0
     R_k = R_k[R_k > 0.1]
 
     delta_E = np.sqrt(R_0*(1.0 + 2 * sum(R_k)) / left_steps)

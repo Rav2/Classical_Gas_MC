@@ -86,7 +86,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
     energy = e_factors[0][int(cutoff*steps):]  # we take only energies in equilibrium state
     print("calculating u(<E>)")
     estimator = np.mean(energy)
-    e_error = energy_error(energy, estimator, int((1 - cutoff) * steps))
+    e_error = energy_error(energy, estimator, len(energy))
     print('Energy error: ', e_error)
     print('last sigma: ', sigma)
     print('acceptance: ',float(accepted) / float(steps*sweep))  # should be close to 0.5
@@ -104,7 +104,7 @@ def main():
     m = 1.
     k = 1.
     T = 10.
-    w = 0.5
+    w = 2.5
     sigma0 = 1.5
     steps = 10000  # min 20
     sweep = 300
@@ -113,3 +113,18 @@ def main():
 
 
 main()
+"""
+zmieniamy wzor na potencjal
+potencjal Lennard-Jonesa (wzor jest na kartce z opisem doswiadczenia specjalistycznego)
+sa dwie stale zalezne od rodzaju gazu, wybierzmy ze epsilon rowne 1 i rm=2
+
+
+zrobic wykres E od T (punktowy z niepewnosciami E)
+dla roznej liczby czastek (blad chcemy miec nie wiekszy niz 10% estymowanej wartosci)
+
+1)
+nieoddzialujacy gaz - pokazac ze dziala, wykres (E_calkowitej), omowic, (test chi^2?)
+2)
+rownanie dla lennarda Jonesa, wykres (E_calkowitej), omowic
+
+"""
