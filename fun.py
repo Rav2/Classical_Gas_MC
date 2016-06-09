@@ -11,18 +11,28 @@ def V(r, w, m):
 
 def V_len(r, eps, sigma):
     """
-
-    :param r:
-    :param eps:
-    :param sigma:
-    :return:
+    Calculates potential energy of system of particles for  Lennard-Jones potential field
+    :param r: list of position vectors of all particles
+    :param eps: parameter of Lennard-Jones potential
+    :param sigma: 2nd parameter of Lennard-Jones potential
+    :return: potential energy for all particles
     """
     sum = 0.0
     for part in r:
-        sum += sigma**12/((part[0]**2+part[1]**2+part[2]*2)**6) - sigma**6//((part[0]**2+part[1]**2+part[2]*2)**3)
+        sum += sigma**12/((np.sum(part*part))**6) - sigma**6/((np.sum(part*part))**3)
     return 4*eps*sum
 
 def exp_fact2_len(eps, sigma, rold, rnew, k, T):
+    """
+    Calculates value of the exponential function for two states of system
+    :param eps: parameter of Lennard-Jones potential
+    :param sigma: 2nd parameter of Lennard-Jones potential
+    :param rold: particle position before change
+    :param rnew: particle position after change
+    :param k: Boltzmann's const
+    :param T: temperature
+    :return: exponential factor for Lennard-Jones potential field
+    """
 
     beta = 1.0/(k*T)
     U = V_len(rnew, eps, sigma)-V_len(rold, eps, sigma)
@@ -56,8 +66,8 @@ def energy_error(energies, estimator_E, left_steps):
     R_k = np.zeros_like(k_range, dtype=float)
     energies = energies - estimator_E
     for k in k_range:
-        if (k/left_steps*100)%10 == 0:
-            print(k/left_steps*100, '%')
+        if ((k+1)/left_steps*100)%20 == 0:
+            print((k+1)/left_steps*100, '%')
         R_k[k-1] = np.sum((energies[0:left_steps - k]) * (energies[k:left_steps+1]))/((left_steps)) / R_0
     R_k = R_k[R_k > 0.1]
 

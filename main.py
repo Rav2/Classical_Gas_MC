@@ -22,16 +22,20 @@ def generate_system(N, x_av, y_av, z_av, sigma):
     return r
 
 
-def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
+def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
     """
 
     :param r: vector of all particles positions
-    :param steps:
+    :param steps: how many values of total energy will we save
+    :param sweep: how many moves will we do in single step
     :param sigma0:
     :param k_b:
     :param T:
     :param m:
     :param w:
+    :param LJ_pot: if True, Lennard-Jones potential will be used, otherwise harmonic one
+    :param LJ_eps:
+    :param LJ_sigma:
     :return: potential energy expected value
     """
     N = len(r)
@@ -52,8 +56,10 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
             for jj in range(0, 3):
                 new_part[0][jj] = (gauss(part[jj], sigma))
             r_cp[no] = new_part
-            # P = exp_fact2_len(10**(-6), 0.01, r, r_cp, 1, 10)
-            P = exp_fact2(k_b, T, r, r_cp, m, w)
+            if LJ_pot:
+                P = exp_fact2_len(10**(-6), 0.01, r, r_cp, 1, 10)
+            else:
+                P = exp_fact2(k_b, T, r, r_cp, m, w)
             if random() < P:
                 r = r_cp
                 accepted += 1
@@ -61,25 +67,24 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
             else:
                 accdata.append(0)
 
-        # e_factors[0][ii] = V_len(r, 1, 1)
-        e_factors[0][ii] = V(r, w, m)
-        
+        if LJ_pot:
+            e_factors[0][ii] = V_len(r, LJ_eps, LJ_sigma)
+        else:
+            e_factors[0][ii] = V(r, w, m)
+
+
+        # if iii > 10 and accepted / iii < 0.5:
+        #     sigma -= 1.0 / iii
+        # elif ii > 10 and accepted / iii > 0.5:
+        #     sigma += 1.0 / iii
+        # if sigma < 0:
+        #     sigma = 1.e-9
         # GW - better method for updating sigma
         accrate=1.0*sum(accdata)/len(accdata)
         sigma = sigma + 0.01*(accrate-0.5)
-        if sigma<=0.0: sigma=1.0e-9 # cannot be negative
-        #print ii, accrate, sigma
+        if sigma <= 0.0: sigma = 1.0e-9 # must be positive
+        print ii, accrate, sigma
 
-        '''
-        #changing cutoff
-        cutoff=0.0
-        if ii >= 100 and ii % 10 == 0 and condition:
-            p = np.polyfit(step_no[ii - 100:ii], e_factors[0][ii - 100:ii], 1)
-            print(step_no[ii], ' ', p[0])
-            if (np.sum(e_factors[0][ii - 20:ii]) - np.sum(e_factors[0][ii - 40:ii - 20])) < 100:
-                cutoff = (ii) / steps  # how much beginning values we have to cut off
-                print('cutoff: ', cutoff)
-                condition = False'''
         cutoff = 0.1
 
         if ((ii+1)/steps*100) % 10 == 0:
@@ -89,32 +94,79 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w):
     print("calculating u(<E>)")
     estimator = np.mean(energy)
     e_error = energy_error(energy, estimator, len(energy))
+    print("parameters: w=", w, " m=", m, " sigma0=", sigma0, " k_B=", k_b, " T=", T, " LJ=", LJ_pot, "LJ_eps=", LJ_eps, "LJ_sigma=", LJ_sigma)
     print('Energy error: ', e_error)
     print('last sigma: ', sigma)
     print('acceptance: ',float(accepted) / float(steps*sweep))  # should be close to 0.5
     print('Energy with expanded uncertainty(K=2): ', estimator,'+/-', 2*e_error)
-    print('Theoretical value: ', 3./2. * N * k_b * T)
+    if not LJ_pot:
+        print('Theoretical value: ', 3./2. * N * k_b * T)
 
-    plt.plot(step_no, e_factors[0])  # plotting E(steps)
-    plt.ylabel("potential energy")
-    plt.xlabel("MC steps")
-    plt.show()
+    # plotting U(steps)
+    # plt.plot(step_no, e_factors[0])  # plotting E(steps)
+    # plt.ylabel("potential energy")
+    # plt.xlabel("MC steps")
+    # plt.savefig("N_",N,"T_",T,".png")
+    return estimator, e_error
+
 
 
 def main():
-    N = 100
+    N = [100]# 10**2, 10**3, 10**4]
+    leg_entries = ['N = 10', 'N = 100', 'N = 1k', 'N = 10k']
     m = 1.
     k = 1.
-    T = 10.
+    T = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
     w = 2.5
-    sigma0 = 1.5
+    sigma0 = 0.5
+    lj_eps = 1.0
+    lj_sigma = 1.0
     steps = 1000  # min 20
     sweep = 300
-    r = generate_system(N, 0., 0., 0., 1.)
-    dynamics(r, steps, sweep, sigma0, k, T, m, w)
-
+    #calculations and plot for harmonic potential
+    # results_E = []
+    # results_uE = []
+    # for n in N:
+    #     E = []
+    #     uE = []
+    #     for t in T:
+    #         r = generate_system(n, 0., 0., 0., 1.)
+    #         e, ue = dynamics(r, steps, sweep, sigma0, k, t, m, w, False, lj_eps, lj_sigma)
+    #         E.append(e)
+    #         uE.append(ue)
+    #     results_E.append(E)
+    #     results_uE.append(uE)
+    # for ii in range(0, len(results_E)):
+    #     plt.errorbar(T, 3./2.*k*T[ii]*N[ii]+np.array(results_E[ii]), yerr=results_uE[ii], fmt=".")
+    # plt.title("Estymator energii calkowitej dla ukladu z potencjalem harmonicznym")
+    # plt.xlabel("T")
+    # plt.ylabel("<E>")
+    # plt.legend(leg_entries)
+    # plt.savefig("potencjal_harmoniczny.png")
+    # plt.show()
+    #calculations and plot for JL potential
+    results_E = []
+    results_uE = []
+    for n in N:
+        E = []
+        uE = []
+        for t in T:
+            r = generate_system(n, 0., 0., 0., 1.)
+            e, ue = dynamics(r, steps, sweep, sigma0, k, t, m, w, True, lj_eps, lj_sigma)
+            E.append(e)
+            uE.append(ue)
+        results_E.append(E)
+        results_uE.append(uE)
+    for ii in range(0, len(results_E)):
+        plt.errorbar(T, 3. / 2. * k * T[ii] * N[ii] + np.array(results_E[ii]), yerr=results_uE[ii], fmt=".")
+    plt.title("Estymator energii calkowitej dla ukladu z potencjalem Lennarda-Jonesa")
+    plt.xlabel("T")
+    plt.ylabel("<E>")
+    plt.legend(leg_entries)
+    plt.savefig("potencjal_LJ.png")
 
 main()
+
 """
 zmieniamy wzor na potencjal
 potencjal Lennard-Jonesa (wzor jest na kartce z opisem doswiadczenia specjalistycznego)
