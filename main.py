@@ -83,7 +83,6 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
         accrate=1.0*sum(accdata)/len(accdata)
         sigma = sigma + 0.01*(accrate-0.5)
         if sigma <= 0.0: sigma = 1.0e-9 # must be positive
-        print ii, accrate, sigma
 
         cutoff = 0.1
 
@@ -112,7 +111,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
 
 
 def main():
-    N = [100]# 10**2, 10**3, 10**4]
+    N = [10]# 10**2, 10**3, 10**4]
     leg_entries = ['N = 10', 'N = 100', 'N = 1k', 'N = 10k']
     m = 1.
     k = 1.
@@ -121,7 +120,7 @@ def main():
     sigma0 = 0.5
     lj_eps = 1.0
     lj_sigma = 1.0
-    steps = 1000  # min 20
+    steps = 100  # min 20
     sweep = 300
     #calculations and plot for harmonic potential
     # results_E = []
