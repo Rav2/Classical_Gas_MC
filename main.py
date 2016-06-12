@@ -57,9 +57,10 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
                 new_part[0][jj] = (gauss(part[jj], sigma))
             r_cp[no] = new_part
             if LJ_pot:
-                P = exp_fact2_len(10**(-6), 0.01, r, r_cp, 1, 10)
+                P = exp_fact2_len(LJ_eps, LJ_sigma, r, r_cp, k_b, T)
             else:
                 P = exp_fact2(k_b, T, r, r_cp, m, w)
+            # print("P=",P)
             if random() < P:
                 r = r_cp
                 accepted += 1
@@ -111,16 +112,16 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
 
 
 def main():
-    N = [10]# 10**2, 10**3, 10**4]
+    N = [40]# 10**2, 10**3, 10**4]
     leg_entries = ['N = 10', 'N = 100', 'N = 1k', 'N = 10k']
     m = 1.
     k = 1.
     T = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
     w = 2.5
-    sigma0 = 0.5
-    lj_eps = 1.0
-    lj_sigma = 1.0
-    steps = 100  # min 20
+    sigma0 = 1.5
+    lj_eps = 1.
+    lj_sigma = 1.
+    steps = 1000  # min 20
     sweep = 300
     #calculations and plot for harmonic potential
     # results_E = []

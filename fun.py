@@ -1,4 +1,4 @@
-from math import exp
+from math import exp, inf
 import numpy as np
 def V(r, w, m):
     """
@@ -35,9 +35,12 @@ def exp_fact2_len(eps, sigma, rold, rnew, k, T):
     """
 
     beta = 1.0/(k*T)
-    U = V_len(rnew, eps, sigma)-V_len(rold, eps, sigma)
-    # print(U)
-    val = exp(-beta*U)
+    U = V_len(rnew, eps, sigma) - V_len(rold, eps, sigma)
+    # print(-beta*U)
+    try:
+        val = exp(-beta*U)
+    except OverflowError:
+        val = inf
     return val
 
 def exp_fact2(k, T, rold, rnew, m, w):
