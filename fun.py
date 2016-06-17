@@ -1,4 +1,4 @@
-from math import exp, inf
+from math import exp
 import numpy as np
 def V(r, w, m):
     """
@@ -9,7 +9,7 @@ def V(r, w, m):
     """
     return 0.5 * m * w * w * np.sum(np.square(r))
 
-def V_len(r, eps, sigma):
+def V_len(r, eps, sigma, w, m):
     """
     Calculates potential energy of system of particles for  Lennard-Jones potential field
     :param r: list of position vectors of all particles
@@ -20,9 +20,9 @@ def V_len(r, eps, sigma):
     sum = 0.0
     for part in r:
         sum += sigma**12/((np.sum(part*part))**6) - sigma**6/((np.sum(part*part))**3)
-    return 4*eps*sum
+    return 4*eps*sum +  V(r, w, m)
 
-def exp_fact2_len(eps, sigma, rold, rnew, k, T):
+def exp_fact2_len(eps, sigma, rold, rnew, k, T, w, m):
     """
     Calculates value of the exponential function for two states of system
     :param eps: parameter of Lennard-Jones potential
@@ -35,12 +35,12 @@ def exp_fact2_len(eps, sigma, rold, rnew, k, T):
     """
 
     beta = 1.0/(k*T)
-    U = V_len(rnew, eps, sigma) - V_len(rold, eps, sigma)
+    U = V_len(rnew, eps, sigma, w, m) - V_len(rold, eps, sigma,w, m)
     # print(-beta*U)
     try:
         val = exp(-beta*U)
     except OverflowError:
-        val = inf
+        val = float('inf')
     return val
 
 def exp_fact2(k, T, rold, rnew, m, w):

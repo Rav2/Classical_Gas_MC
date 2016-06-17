@@ -57,7 +57,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
                 new_part[0][jj] = (gauss(part[jj], sigma))
             r_cp[no] = new_part
             if LJ_pot:
-                P = exp_fact2_len(LJ_eps, LJ_sigma, r, r_cp, k_b, T)
+                P = exp_fact2_len(LJ_eps, LJ_sigma, r, r_cp, k_b, T, w, m)
             else:
                 P = exp_fact2(k_b, T, r, r_cp, m, w)
             # print("P=",P)
@@ -69,7 +69,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
                 accdata.append(0)
 
         if LJ_pot:
-            e_factors[0][ii] = V_len(r, LJ_eps, LJ_sigma)
+            e_factors[0][ii] = V_len(r, LJ_eps, LJ_sigma, w, m)
         else:
             e_factors[0][ii] = V(r, w, m)
 
@@ -112,8 +112,8 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
 
 
 def main():
-    N = [40]# 10**2, 10**3, 10**4]
-    leg_entries = ['N = 10', 'N = 100', 'N = 1k', 'N = 10k']
+    N = [40, 200, 600]
+    leg_entries = ['N = 40', 'N = 200', 'N = 600']
     m = 1.
     k = 1.
     T = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
@@ -157,6 +157,7 @@ def main():
             uE.append(ue)
         results_E.append(E)
         results_uE.append(uE)
+        steps = steps*3
     for ii in range(0, len(results_E)):
         plt.errorbar(T, 3. / 2. * k * T[ii] * N[ii] + np.array(results_E[ii]), yerr=results_uE[ii], fmt=".")
     plt.title("Estymator energii calkowitej dla ukladu z potencjalem Lennarda-Jonesa")
