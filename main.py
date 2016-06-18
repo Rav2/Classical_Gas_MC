@@ -69,7 +69,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
                 accdata.append(0)
 
         if LJ_pot:
-            e_factors[0][ii] = V_len(r, LJ_eps, LJ_sigma, w, m)
+            e_factors[0][ii] = V_len(r, LJ_eps, LJ_sigma, w, m) #cześć kinetyczna dodawana jest przy rysowaniu
         else:
             e_factors[0][ii] = V(r, w, m)
 
@@ -98,7 +98,7 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
     print('Energy error: ', e_error)
     print('last sigma: ', sigma)
     print('acceptance: ',float(accepted) / float(steps*sweep))  # should be close to 0.5
-    print('Energy with expanded uncertainty(K=2): ', estimator,'+/-', 2*e_error)
+    print('Energy with expanded uncertainty(K=2): ', estimator,'+/-', 2.*e_error)
     if not LJ_pot:
         print('Theoretical value: ', 3./2. * N * k_b * T)
 
@@ -107,13 +107,15 @@ def dynamics(r, steps, sweep, sigma0, k_b, T, m, w, LJ_pot, LJ_eps, LJ_sigma):
     # plt.ylabel("potential energy")
     # plt.xlabel("MC steps")
     # plt.savefig("N_",N,"T_",T,".png")
-    return estimator, e_error
+    return estimator, 2.*e_error
 
 
 
 def main():
-    N = [40, 200, 600]
-    leg_entries = ['N = 40', 'N = 200', 'N = 600']
+    #N = [40, 200, 600]
+    #leg_entries = ['N = 40', 'N = 200', 'N = 600']
+    N = [10, 100]
+    leg_entries = ['teoria - N = 10', 'teoria - N = 100','N = 10', 'N = 100']
     m = 1.
     k = 1.
     T = [1., 2., 3., 4., 5., 6., 7., 8., 9., 10.]
@@ -121,30 +123,39 @@ def main():
     sigma0 = 1.5
     lj_eps = 1.
     lj_sigma = 1.
-    steps = 1000  # min 20
+    steps = 300  # min 20
     sweep = 300
+    teor_E10 = []
+    teor_E100 = []
+    for i in T:
+        teor_E10.append(3. * 10. * i ) # 3NkT 10 - N, i - T
+        teor_E100.append(3. * 100. * i )
+    plt.plot(range(1, 11), teor_E10)
+    plt.plot(range(1, 11), teor_E100)
     #calculations and plot for harmonic potential
-    # results_E = []
-    # results_uE = []
-    # for n in N:
-    #     E = []
-    #     uE = []
-    #     for t in T:
-    #         r = generate_system(n, 0., 0., 0., 1.)
-    #         e, ue = dynamics(r, steps, sweep, sigma0, k, t, m, w, False, lj_eps, lj_sigma)
-    #         E.append(e)
-    #         uE.append(ue)
-    #     results_E.append(E)
-    #     results_uE.append(uE)
-    # for ii in range(0, len(results_E)):
-    #     plt.errorbar(T, 3./2.*k*T[ii]*N[ii]+np.array(results_E[ii]), yerr=results_uE[ii], fmt=".")
-    # plt.title("Estymator energii calkowitej dla ukladu z potencjalem harmonicznym")
-    # plt.xlabel("T")
-    # plt.ylabel("<E>")
-    # plt.legend(leg_entries)
-    # plt.savefig("potencjal_harmoniczny.png")
-    # plt.show()
+    results_E = []
+    results_uE = []
+    for n in N:
+        E = []
+        uE = []
+        for t in T:
+            r = generate_system(n, 0., 0., 0., 1.)
+            e, ue = dynamics(r, steps, sweep, sigma0, k, t, m, w, False, lj_eps, lj_sigma)
+            E.append(e + 3./2.*k*t*n)
+            uE.append(ue)
+        results_E.append(E)
+        results_uE.append(uE)
+    for ii in range(0, len(results_E)):
+        plt.errorbar(T, np.array(results_E[ii]), yerr=results_uE[ii], fmt=".") #w tym miejscu zle liczyło 3/2nkt poszło do 144
+
+    plt.title("Estymator energii calkowitej dla ukladu z potencjalem harmonicznym")
+    plt.xlabel("T")
+    plt.ylabel("<E>")
+    plt.legend(leg_entries)
+    plt.savefig("potencjal_harmoniczny.png")
+    plt.show()
     #calculations and plot for JL potential
+    '''
     results_E = []
     results_uE = []
     for n in N:
@@ -157,7 +168,7 @@ def main():
             uE.append(ue)
         results_E.append(E)
         results_uE.append(uE)
-        steps = steps*3
+        steps = steps*2
     for ii in range(0, len(results_E)):
         plt.errorbar(T, 3. / 2. * k * T[ii] * N[ii] + np.array(results_E[ii]), yerr=results_uE[ii], fmt=".")
     plt.title("Estymator energii calkowitej dla ukladu z potencjalem Lennarda-Jonesa")
@@ -165,7 +176,7 @@ def main():
     plt.ylabel("<E>")
     plt.legend(leg_entries)
     plt.savefig("potencjal_LJ.png")
-
+    '''
 main()
 
 """
